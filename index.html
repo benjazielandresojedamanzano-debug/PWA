@@ -75,6 +75,84 @@
   }
   .ios-hint.show{ display:block; }
 
+  /* ---------- Voice FAB ---------- */
+  .mic-fab{
+    position: fixed;
+    right: 20px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: var(--indigo);
+    color: #fff;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    z-index: 15;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 10px 24px -8px rgba(79,70,229,0.6);
+    transition: transform .15s ease;
+  }
+  .mic-fab:active{ transform: scale(0.94); }
+  .mic-fab:focus-visible{ outline: 3px solid var(--ink); outline-offset: 3px; }
+  .mic-fab.listening{ animation: mic-pulse 1.8s ease-in-out infinite; }
+  @keyframes mic-pulse{
+    0%,100%{ box-shadow: 0 10px 24px -8px rgba(79,70,229,0.6), 0 0 0 0 rgba(79,70,229,0.45); }
+    50%{ box-shadow: 0 10px 24px -8px rgba(79,70,229,0.6), 0 0 0 14px rgba(79,70,229,0); }
+  }
+  .mic-fab.triggered{ animation: mic-flash .8s ease; }
+  @keyframes mic-flash{
+    0%{ background: var(--green); }
+    100%{ background: var(--indigo); }
+  }
+
+  .mic-transcript{
+    position: fixed;
+    right: 20px;
+    bottom: 88px;
+    max-width: 230px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 8px 12px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .25s ease, transform .25s ease;
+    pointer-events: none;
+    z-index: 15;
+    text-align: right;
+  }
+  .mic-transcript.show{ opacity: 1; transform: translateY(0); }
+
+  .voice-notice{
+    display:none;
+    align-items:center;
+    gap: 12px;
+    background: var(--indigo-soft);
+    color: var(--ink);
+    font-size: 12.5px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    border-radius: 14px;
+    margin-bottom: 22px;
+  }
+  .voice-notice.show{ display:flex; }
+  .voice-notice p{ margin:0; flex:1; }
+  .voice-notice button{
+    background: var(--indigo);
+    color:#fff;
+    border:none;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 12.5px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .voice-notice.warn{ background: #FDEBEC; }
+
   /* ---------- Header ---------- */
   header{ margin-bottom: 28px; }
   .eyebrow{
@@ -234,6 +312,18 @@
   .glyph-field input{ text-align:center; font-size:18px; }
   .name-field{ flex:1; }
 
+  .trigger-field{ margin-bottom: 16px; }
+  .trigger-field input{
+    width:100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+
   .color-row{ display:flex; gap:8px; margin-bottom: 16px; flex-wrap:wrap; }
   .color-dot{
     width: 26px; height: 26px;
@@ -374,6 +464,15 @@
     📲 En iPhone/iPad: toca <strong>Compartir</strong> en Safari → <strong>Agregar a pantalla de inicio</strong> para instalarla como app.
   </div>
 
+  <div class="voice-notice" id="unsupportedNotice">
+    <p>Tu navegador no soporta activación por voz. Prueba con Chrome o Edge de escritorio o Android. Los íconos siguen funcionando normal tocándolos.</p>
+  </div>
+
+  <div class="voice-notice warn" id="popupNotice">
+    <p>El navegador bloqueó algunas ventanas al abrirlas por voz. Ábrelas ahora, y permite las ventanas emergentes de este sitio para que no vuelva a pasar.</p>
+    <button type="button" id="openPendingBtn">Abrir ahora</button>
+  </div>
+
   <header>
     <p class="eyebrow">Automatizado de Espacio de Trabajo</p>
     <h1>Tu espacio, un toque</h1>
@@ -408,6 +507,11 @@
   <label>Color</label>
   <div class="color-row" id="colorRow"></div>
 
+  <div class="trigger-field">
+    <label>Palabra clave (voz)</label>
+    <input type="text" id="editTrigger" placeholder="ej. trabajo">
+  </div>
+
   <p class="drawer-section-label">Canales</p>
   <div id="drawerChannels"></div>
   <form class="add-channel-form" id="addChannelForm">
@@ -421,6 +525,9 @@
     <button class="btn-danger" id="deleteDrawerBtn">Eliminar</button>
   </div>
 </div>
+
+<button type="button" class="mic-fab" id="micFab" aria-pressed="false" aria-label="Activar o desactivar escucha por voz">🎙</button>
+<div class="mic-transcript" id="micTranscript"></div>
 
 <script>
   const STORAGE_KEY = "espacio-de-trabajo:playlists-v1";
@@ -440,6 +547,7 @@
     if(!pl.color) pl.color = TILE_COLORS[index % TILE_COLORS.length];
     if(!pl.glyph) pl.glyph = DEFAULT_GLYPH;
     if(pl.enabled === undefined) pl.enabled = true;
+    if(!pl.trigger) pl.trigger = pl.name.toLowerCase();
     return pl;
   }
 
@@ -461,7 +569,7 @@
       }
     }catch(e){ /* localStorage no disponible: seguimos con valores por defecto en memoria */ }
 
-    const defaultPlaylist = backfill({ id: crypto.randomUUID(), name: "Principal", glyph: "💼", channels: DEFAULT_CHANNELS() }, 0);
+    const defaultPlaylist = backfill({ id: crypto.randomUUID(), name: "Principal", glyph: "💼", trigger: "trabajo", channels: DEFAULT_CHANNELS() }, 0);
     return { playlists: [defaultPlaylist] };
   }
 
@@ -519,10 +627,38 @@
     gridEl.appendChild(addTile);
   }
 
-  function launchPlaylist(pl, tileEl){
+  function openChannel(url){
+    if(/^https?:\/\//i.test(url)){
+      return window.open(url, "_blank");
+    }
+    // Protocolo externo (ej. vscode://): iframe oculto para no gastar
+    // el permiso de ventanas emergentes que necesitan los demas canales.
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(() => iframe.remove(), 1500);
+    return true;
+  }
+
+  let pendingBlockedUrls = [];
+
+  function launchPlaylist(pl, tileEl, viaVoice){
     const active = pl.channels.filter(c => c.enabled);
-    if(active.length === 0){ openDrawer(pl.id); return; }
-    active.forEach(ch => window.open(ch.url, "_blank"));
+    if(active.length === 0){ if(tileEl && !viaVoice) openDrawer(pl.id); return; }
+
+    const web = active.filter(c => /^https?:\/\//i.test(c.url));
+    const external = active.filter(c => !/^https?:\/\//i.test(c.url));
+
+    const blocked = [];
+    web.forEach(ch => { if(!openChannel(ch.url)) blocked.push(ch.url); });
+    external.forEach(ch => openChannel(ch.url));
+
+    if(blocked.length){
+      pendingBlockedUrls = pendingBlockedUrls.concat(blocked);
+      document.getElementById("popupNotice").classList.add("show");
+    }
+
     if(tileEl){
       tileEl.classList.remove("launching");
       void tileEl.offsetWidth;
@@ -530,12 +666,19 @@
     }
   }
 
+  document.getElementById("openPendingBtn").addEventListener("click", () => {
+    pendingBlockedUrls.forEach(url => window.open(url, "_blank"));
+    pendingBlockedUrls = [];
+    document.getElementById("popupNotice").classList.remove("show");
+  });
+
   /* ---------- Drawer ---------- */
 
   const scrim = document.getElementById("scrim");
   const drawer = document.getElementById("drawer");
   const editGlyph = document.getElementById("editGlyph");
   const editName = document.getElementById("editName");
+  const editTrigger = document.getElementById("editTrigger");
   const colorRow = document.getElementById("colorRow");
   const drawerChannels = document.getElementById("drawerChannels");
   const deleteDrawerBtn = document.getElementById("deleteDrawerBtn");
@@ -549,6 +692,7 @@
 
     editGlyph.value = pl ? pl.glyph : DEFAULT_GLYPH;
     editName.value = pl ? pl.name : "";
+    editTrigger.value = pl ? pl.trigger : "";
     draftColor = pl ? pl.color : TILE_COLORS[state.playlists.length % TILE_COLORS.length];
     draftChannels = pl ? JSON.parse(JSON.stringify(pl.channels)) : [];
     deleteDrawerBtn.style.display = (pl && state.playlists.length > 1) ? "block" : "none";
@@ -626,17 +770,19 @@
     const name = editName.value.trim();
     if(!name){ editName.focus(); return; }
     const glyph = editGlyph.value.trim() || DEFAULT_GLYPH;
+    const trigger = editTrigger.value.trim() || name.toLowerCase();
 
     if(editingId){
       const pl = state.playlists.find(p => p.id === editingId);
       pl.name = name;
       pl.glyph = glyph;
       pl.color = draftColor;
+      pl.trigger = trigger;
       pl.channels = draftChannels;
     }else{
       state.playlists.push({
         id: crypto.randomUUID(),
-        name, glyph, color: draftColor,
+        name, glyph, color: draftColor, trigger,
         channels: draftChannels, enabled: true
       });
     }
@@ -682,6 +828,110 @@
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
   if(isIOS && !isStandalone){
     document.getElementById("iosHint").classList.add("show");
+  }
+
+  /* ---------- Voice activation ---------- */
+
+  const micFab = document.getElementById("micFab");
+  const micTranscript = document.getElementById("micTranscript");
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const TRIGGER_COOLDOWN_MS = 4000;
+
+  let recognition = null;
+  let shouldListen = false;
+  let lastTriggerAt = 0;
+  let transcriptTimer = null;
+
+  function normalize(s){
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  }
+
+  function showTranscript(text){
+    micTranscript.textContent = text;
+    micTranscript.classList.add("show");
+    clearTimeout(transcriptTimer);
+    transcriptTimer = setTimeout(() => micTranscript.classList.remove("show"), 2200);
+  }
+
+  function checkVoiceTriggers(text){
+    const norm = normalize(text);
+    if(!norm) return;
+    const now = Date.now();
+    if(now - lastTriggerAt < TRIGGER_COOLDOWN_MS) return;
+
+    const match = state.playlists.find(pl => pl.enabled && pl.trigger && norm.includes(normalize(pl.trigger)));
+    if(match){
+      lastTriggerAt = now;
+      const tileEl = gridEl.querySelector(`[data-id="${match.id}"]`);
+      launchPlaylist(match, tileEl, true);
+      micFab.classList.remove("triggered");
+      void micFab.offsetWidth;
+      micFab.classList.add("triggered");
+      showTranscript(`"${match.trigger}" → ${match.name}`);
+    }
+  }
+
+  function initRecognition(){
+    recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "es-ES";
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        const chunk = event.results[i][0].transcript;
+        if(event.results[i].isFinal){
+          showTranscript(chunk);
+          checkVoiceTriggers(chunk);
+        }else{
+          interim += chunk;
+        }
+      }
+      if(interim) showTranscript(interim);
+    };
+
+    recognition.onerror = (event) => {
+      if(event.error === "not-allowed" || event.error === "service-not-allowed"){
+        shouldListen = false;
+        micFab.classList.remove("listening");
+        micFab.setAttribute("aria-pressed", "false");
+      }
+    };
+
+    recognition.onend = () => {
+      if(shouldListen){
+        setTimeout(() => { try{ recognition.start(); }catch(e){} }, 250);
+      }
+    };
+  }
+
+  function toggleListening(){
+    if(!SpeechRecognitionCtor){
+      document.getElementById("unsupportedNotice").classList.add("show");
+      return;
+    }
+    if(!recognition) initRecognition();
+
+    if(shouldListen){
+      shouldListen = false;
+      micFab.classList.remove("listening");
+      micFab.setAttribute("aria-pressed", "false");
+      recognition.stop();
+      micTranscript.classList.remove("show");
+    }else{
+      shouldListen = true;
+      micFab.classList.add("listening");
+      micFab.setAttribute("aria-pressed", "true");
+      try{ recognition.start(); }catch(e){ /* ya podria estar iniciado */ }
+      showTranscript("Escuchando…");
+    }
+  }
+
+  micFab.addEventListener("click", toggleListening);
+
+  if(!SpeechRecognitionCtor){
+    document.getElementById("unsupportedNotice").classList.add("show");
   }
 
   if("serviceWorker" in navigator){
