@@ -1,0 +1,115 @@
+====================================================
+ ESPACIO DE TRABAJO (PWA) - MANUAL RAPIDO
+====================================================
+
+Archivos de esta version (mantenlos todos juntos,
+en la MISMA carpeta, con esos nombres exactos):
+
+  index.html
+  manifest.json
+  service-worker.js
+  icon-192.png
+  icon-512.png
+
+----------------------------------------------------
+1. REQUISITO IMPORTANTE: necesita estar "hosteada"
+----------------------------------------------------
+A diferencia de las otras dos versiones, esta NO
+funciona bien si solo abres el index.html con doble
+clic desde tu computadora (protocolo "file://").
+
+Los navegadores solo ofrecen instalar una PWA cuando
+la pagina se sirve por HTTPS (o "localhost"). Es una
+regla de seguridad de los navegadores, no algo que se
+pueda evitar desde el codigo.
+
+La buena noticia: hostear estos 5 archivos es gratis
+y toma minutos.
+
+----------------------------------------------------
+2. COMO PUBLICARLA GRATIS (GitHub Pages)
+----------------------------------------------------
+1. Crea una cuenta gratis en https://github.com si no
+   tienes una.
+2. Crea un repositorio nuevo (puede ser publico),
+   ej: "espacio-de-trabajo"
+3. Sube los 5 archivos de esta carpeta a ese repositorio
+   (boton "Add file" -> "Upload files" en la web de GitHub,
+   arrastra los 5 archivos y confirma).
+4. Entra a Settings -> Pages (menu izquierdo).
+5. En "Branch", elige "main" y guarda.
+6. Espera 1-2 minutos. GitHub te dara un link como:
+     https://tu-usuario.github.io/espacio-de-trabajo/
+7. Abre ese link, ¡y ahi si va a ofrecerte instalar!
+
+Alternativa igual de facil: arrastra la carpeta completa
+a https://app.netlify.com/drop (no requiere cuenta para
+probarlo, te da un link al instante).
+
+----------------------------------------------------
+3. COMO INSTALARLA SEGUN TU DISPOSITIVO
+----------------------------------------------------
+Windows / Mac (Chrome o Edge):
+  Al entrar al link, aparece un banner "Instalar" en la
+  pagina, o el icono de instalar en la barra de
+  direcciones (a la derecha, cerca de los favoritos).
+  Un clic y queda como programa en tu menu de inicio.
+
+Android (Chrome):
+  Aparece el mismo banner "Instalar", o desde el menu
+  (los 3 puntos) -> "Instalar app" / "Agregar a pantalla
+  de inicio".
+
+iPhone / iPad (Safari):
+  Apple no deja que Safari muestre el banner automatico.
+  Hazlo manual: toca el boton "Compartir" (el cuadrito
+  con la flecha hacia arriba) -> "Agregar a pantalla de
+  inicio". La app misma te lo recuerda con un aviso si
+  detecta que estas en iPhone.
+
+----------------------------------------------------
+4. FUNCIONES
+----------------------------------------------------
+- Cada playlist es un icono de color en la cuadricula
+  principal. Tocarlo abre todos sus canales activos.
+- Boton "+ Nueva" (ultimo icono) para crear una playlist:
+  eliges nombre, un emoji/icono de 1-2 caracteres, y color.
+- El lapiz (✎) en la esquina de cada icono abre el editor:
+  cambiar nombre, icono, color, activar/desactivar o quitar
+  canales, agregar canales nuevos, o eliminar la playlist.
+- Guarda todo en el mismo localStorage que las otras
+  versiones (clave "espacio-de-trabajo:playlists-v1"), asi
+  que si hosteas esta PWA en el mismo dominio donde tengas
+  las otras versiones, comparten las playlists.
+- Funciona parcialmente offline: una vez que la abriste una
+  vez con internet, el service worker guarda una copia y
+  puedes volver a abrirla sin conexion (aunque los canales
+  que abra si van a necesitar internet para cargar).
+
+----------------------------------------------------
+5. PROBLEMAS COMUNES
+----------------------------------------------------
+No aparece el boton de instalar
+  -> Revisa que estes entrando por el link https (no
+     abriendo el archivo local). Tambien revisa que no la
+     hayas instalado ya antes (en ese caso no vuelve a
+     aparecer el banner).
+
+En iPhone no aparece boton de instalar
+  -> Es normal, Apple no lo permite. Usa el metodo manual
+     de la seccion 3 (Compartir -> Agregar a pantalla
+     de inicio).
+
+Se ve desactualizada despues de que subo cambios
+  -> El service worker guarda una copia en cache. Cierra
+     la app instalada por completo y vuelve a abrirla, o
+     borra los datos del sitio desde la configuracion del
+     navegador para forzar la version mas reciente.
+
+Las ventanas no se abren al tocar una playlist
+  -> Permite las ventanas emergentes para el dominio donde
+     hosteaste la app (deberia funcionar directo la primera
+     vez porque es un toque real, pero algunos navegadores
+     moviles son mas estrictos).
+
+====================================================
