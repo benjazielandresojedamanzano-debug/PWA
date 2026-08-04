@@ -1,7 +1,7 @@
 {
   "name": "Espacio de Trabajo",
   "short_name": "Espacio",
-  "description": "Automatizado de espacio de trabajo: abre tus playlists de apps y páginas con un toque.",
+  "description": "Automatizado de espacio de trabajo: abre tus playlists de apps y páginas con un toque o con tu voz.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -33,5 +33,24 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva playlist",
+      "short_name": "Nueva",
+      "description": "Crear una playlist nueva directamente",
+      "url": "./index.html?action=new",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }
+

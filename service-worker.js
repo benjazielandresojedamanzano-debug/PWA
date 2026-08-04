@@ -1,4 +1,4 @@
-const CACHE_NAME = "espacio-de-trabajo-v1";
+const CACHE_NAME = "espacio-de-trabajo-v2";
 const SHELL_FILES = [
   "./index.html",
   "./manifest.json",

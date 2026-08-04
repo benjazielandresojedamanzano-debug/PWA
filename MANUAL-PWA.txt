@@ -70,24 +70,76 @@ iPhone / iPad (Safari):
 ----------------------------------------------------
 4. FUNCIONES
 ----------------------------------------------------
-- Cada playlist es un icono de color en la cuadricula
-  principal. Tocarlo abre todos sus canales activos.
-- Boton "+ Nueva" (ultimo icono) para crear una playlist:
-  eliges nombre, un emoji/icono de 1-2 caracteres, y color.
-- El lapiz (✎) en la esquina de cada icono abre el editor:
-  cambiar nombre, icono, color, activar/desactivar o quitar
-  canales, agregar canales nuevos, o eliminar la playlist.
-- Guarda todo en el mismo localStorage que las otras
-  versiones (clave "espacio-de-trabajo:playlists-v1"), asi
-  que si hosteas esta PWA en el mismo dominio donde tengas
-  las otras versiones, comparten las playlists.
-- Funciona parcialmente offline: una vez que la abriste una
-  vez con internet, el service worker guarda una copia y
-  puedes volver a abrirla sin conexion (aunque los canales
-  que abra si van a necesitar internet para cargar).
+Basicas:
+- Cada playlist es un icono de color en la cuadricula. Tocarlo
+  abre todos sus canales activos.
+- "+ Nueva" (ultimo icono) crea una playlist: nombre, emoji,
+  color y palabra clave de voz.
+- El lapiz (✎) de cada icono abre el editor: nombre, icono,
+  color, palabra clave, canales, y moverla antes/despues en
+  la cuadricula.
+- Boton flotante del microfono: activalo y di la palabra clave
+  de cualquier playlist para que se abra sola.
+
+Nuevas:
+- BUSQUEDA INSTANTANEA: presiona Ctrl/Cmd+K, la tecla "/", o el
+  icono 🔍 arriba para buscar cualquier canal de cualquier
+  playlist y abrirlo al instante, sin navegar por las playlists.
+- MODO OSCURO: icono 🌙/☀️ arriba, o el switch en Ajustes (⚙️).
+  Se recuerda entre visitas.
+- RESPALDO: en Ajustes (⚙️), "Exportar copia" descarga un
+  archivo .json con todas tus playlists. "Importar copia" lo
+  vuelve a cargar (util si cambias de navegador o de equipo, o
+  simplemente como respaldo).
+- COMPARTIR CONFIGURACION: en Ajustes, "Generar link para
+  compartir" copia un link que trae tus playlists incluidas.
+  Al abrirlo en otro dispositivo/navegador, pregunta si quieres
+  importarlas.
+- RECIBIR LINKS COMPARTIDOS DESDE OTRAS APPS (solo instalada,
+  Android/Chrome principalmente): usa el boton "Compartir" de
+  cualquier app o pagina y elige "Espacio de Trabajo" de la
+  lista. Te preguntara a que playlist quieres agregar ese link.
+- ATAJO DEL ICONO: en Android/Windows, mantén presionado el
+  icono de la app instalada (fuera de esta pagina, en tu
+  pantalla de inicio o barra de tareas) para ver la opcion
+  directa "Nueva playlist".
+- CATALOGO DE APPS: dentro del editor de cada playlist, la
+  seccion "General" son links que funcionan en cualquier
+  dispositivo (abren la app si esta instalada, o la pagina web
+  si no). La seccion "Solo escritorio" son protocolos que
+  solo responden si esa app esta instalada en Windows y ya se
+  abrio al menos una vez ahi (no aparece en movil).
+
+Guarda todo en el mismo localStorage (clave
+"espacio-de-trabajo:playlists-v1"). Funciona parcialmente
+offline gracias al service worker.
 
 ----------------------------------------------------
-5. PROBLEMAS COMUNES
+5. LO QUE NO SE PUEDE ABRIR DESDE LA WEB (Y POR QUE)
+----------------------------------------------------
+Esto no es un bug, es una regla de seguridad de todos los
+navegadores, sin excepcion:
+
+- El Explorador de archivos de Windows no tiene ningun
+  protocolo propio registrado. Ninguna pagina web, ni esta ni
+  ninguna otra, puede abrirlo.
+- Ningun programa que NO tenga un protocolo tipo "algo://"
+  registrado en Windows se puede abrir desde la web. Si un
+  programa no aparece en el catalogo de apps rapidas, casi
+  seguro es porque no tiene ese protocolo.
+- Los links "file:///" (para abrir carpetas o archivos locales)
+  estan bloqueados por Chrome y Edge desde una pagina https,
+  aunque el usuario ya haya dado todos los permisos posibles.
+  No hay configuracion que lo desbloquee.
+
+Si quieres poder abrir CUALQUIER programa sin excepcion, la
+unica forma real es instalar un pequeño ayudante local en tu
+equipo que reciba la orden desde la web (dejamos esto pendiente
+a proposito, para no volver a depender de instalaciones locales
+salvo que lo pidas explicitamente).
+
+----------------------------------------------------
+6. PROBLEMAS COMUNES
 ----------------------------------------------------
 No aparece el boton de instalar
   -> Revisa que estes entrando por el link https (no
@@ -111,5 +163,27 @@ Las ventanas no se abren al tocar una playlist
      hosteaste la app (deberia funcionar directo la primera
      vez porque es un toque real, pero algunos navegadores
      moviles son mas estrictos).
+
+No aparece el boton del microfono o no detecta nada
+  -> Revisa que estes en Chrome o Edge (Firefox no soporta
+     activacion por voz). El aviso te dice si tu navegador
+     no es compatible.
+
+No aparece la opcion de compartir a la app desde otras apps
+  -> Solo funciona si la instalaste (icono propio), no en la
+     pestaña del navegador. Reinstala si acabas de actualizar
+     el manifest.json.
+
+No aparece el atajo "Nueva playlist" al mantener presionado
+el icono
+  -> Algunos navegadores/sistemas tardan en detectar cambios
+     en el manifest.json tras actualizar. Desinstala y vuelve
+     a instalar la app para refrescarlo.
+
+El link para compartir es muy largo o no funciona
+  -> Es normal si tienes muchas playlists con muchos canales;
+     el link crece con tus datos. Si el navegador de quien lo
+     recibe lo corta, usa mejor "Exportar copia" y comparte el
+     archivo .json directamente.
 
 ====================================================
